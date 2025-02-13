@@ -14,6 +14,7 @@ while(True):
         for netuid in subnets_to_stake:
             subnet = sub.subnet(netuid)
             print(f"Subnet {netuid} price: {subnet.price}/alpha")
+            sub.wait_for_block()
     except:
         print("Network not upgraded, trying again.")
         sub.wait_for_block()

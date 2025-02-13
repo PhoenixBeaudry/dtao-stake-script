@@ -16,7 +16,7 @@ import bittensor as bt
 
 DRY_RUN = False
 TEST_NET_RUN = False
-TARGET_TOTAL_SPEND = 0.3 if TEST_NET_RUN else 10.0
+TARGET_TOTAL_SPEND = 0.3 if TEST_NET_RUN else 11.0
 
 def configure_wallet(dry_run):
     """
@@ -136,11 +136,11 @@ if __name__ == '__main__':
     total_spend = 0.0
 
     # Initialize stake increment and dynamic adjustment parameters
-    current_increment = 0.025 if TEST_NET_RUN else 0.25
+    current_increment = 0.025 if TEST_NET_RUN else 0.2
     lower_threshold = 0    # Minimum desired slippage (in %)
     upper_threshold = 7.0   # Maximum desired slippage (in %)
-    min_increment = 0.1
-    max_increment = 0.025 if TEST_NET_RUN else 0.25
+    min_increment = 0.2
+    max_increment = 0.025 if TEST_NET_RUN else 1
 
     while total_spend < TARGET_TOTAL_SPEND:
         try:
