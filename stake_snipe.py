@@ -14,9 +14,9 @@
 #!/usr/bin/env python3
 import bittensor as bt
 
-DRY_RUN = False
+DRY_RUN = True
 TEST_NET_RUN = True
-TARGET_TOTAL_SPEND = 0.3 if TEST_NET_RUN else 20.0
+TARGET_TOTAL_SPEND = 0.3 if TEST_NET_RUN else 10.0
 
 def configure_wallet(dry_run):
     """
@@ -126,7 +126,7 @@ def stake_on_subnet(sub, netuid, current_increment, dry_run, wallet, lower_thres
 
 if __name__ == '__main__':
     # Connect to the network: use test network if TEST_NET_RUN is True, otherwise use main network.
-    sub = bt.Subtensor(network="test" if TEST_NET_RUN else "main")
+    sub = bt.Subtensor(network="test" if TEST_NET_RUN else "finney")
 
     wallet = configure_wallet(DRY_RUN)
 
