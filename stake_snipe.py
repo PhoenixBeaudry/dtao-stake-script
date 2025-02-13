@@ -14,8 +14,8 @@
 #!/usr/bin/env python3
 import bittensor as bt
 
-DRY_RUN = True
-TEST_NET_RUN = True
+DRY_RUN = False
+TEST_NET_RUN = False
 TARGET_TOTAL_SPEND = 0.3 if TEST_NET_RUN else 10.0
 
 def configure_wallet(dry_run):
@@ -126,7 +126,7 @@ def stake_on_subnet(sub, netuid, current_increment, dry_run, wallet, lower_thres
 
 if __name__ == '__main__':
     # Connect to the network: use test network if TEST_NET_RUN is True, otherwise use main network.
-    sub = bt.Subtensor(network="test" if TEST_NET_RUN else "finney")
+    sub = bt.Subtensor(network="test" if TEST_NET_RUN else "ws://127.0.0.1:9944")
 
     wallet = configure_wallet(DRY_RUN)
 
@@ -136,25 +136,29 @@ if __name__ == '__main__':
     total_spend = 0.0
 
     # Initialize stake increment and dynamic adjustment parameters
-    current_increment = 0.025 if TEST_NET_RUN else 1.0
+    current_increment = 0.025 if TEST_NET_RUN else 0.25
     lower_threshold = 0    # Minimum desired slippage (in %)
-    upper_threshold = 5.0   # Maximum desired slippage (in %)
-    min_increment = 0.01
-    max_increment = 0.025 if TEST_NET_RUN else 1.0
+    upper_threshold = 7.0   # Maximum desired slippage (in %)
+    min_increment = 0.1
+    max_increment = 0.025 if TEST_NET_RUN else 0.25
 
     while total_spend < TARGET_TOTAL_SPEND:
-        for netuid in subnets_to_stake:
-            current_increment, spent = stake_on_subnet(
-                sub, netuid, current_increment, DRY_RUN, wallet,
-                lower_threshold, upper_threshold, min_increment, max_increment
-            )
-            if spent > 0:
-                stake_tracker[netuid] += spent
-                total_spend += spent
-                print(f"Total TAO spent so far: {total_spend:.3f}")
-            if total_spend >= TARGET_TOTAL_SPEND:
-                break
-        print("Waiting for next block...")
-        sub.wait_for_block()
+        try:
+            for netuid in subnets_to_stake:
+                current_increment, spent = stake_on_subnet(
+                    sub, netuid, current_increment, DRY_RUN, wallet,
+                    lower_threshold, upper_threshold, min_increment, max_increment
+                )
+                if spent > 0:
+                    stake_tracker[netuid] += spent
+                    total_spend += spent
+                    print(f"Total TAO spent so far: {total_spend:.3f}")
+                if total_spend >= TARGET_TOTAL_SPEND:
+                    break
+            print("Waiting for next block...")
+            sub.wait_for_block()
+        except:
+            print("Network not upgraded, trying again.")
+            sub.wait_for_block()
 
     print("Target TAO spending reached. Staking complete.")
