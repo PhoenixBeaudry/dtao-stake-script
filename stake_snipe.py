@@ -1,9 +1,22 @@
+####################
+# This is a script to automatically stake TAO into new dTAO Subnets
+# In order to run this script, first create a new venv in this directory: 'python3 -m venv venv'
+# Activate the venv: 'source venv/bin/activate'
+# Install release candidate bittensor sdk: 'pip install bittensor==9.0.0rc6'
+# Install latest release candidate btcli: 'pip install bittensor-cli==9.0.0rc4'
+# Ensure you have a Bittensor wallet + hotkey created using 'btcli w create' called 'snipe'
+# Fill in preferred parameters in __main__ and TARGET_TOTAL_SPEND
+# For actual run make sure variables DRY_RUN and TEST_NET_RUN are set to False.
+# Run script after network upgrade.
+####################
+
+
 #!/usr/bin/env python3
 import bittensor as bt
 
-DRY_RUN = True
+DRY_RUN = False
 TEST_NET_RUN = True
-TARGET_TOTAL_SPEND = 10.0
+TARGET_TOTAL_SPEND = 0.3 if TEST_NET_RUN else 20.0
 
 def configure_wallet(dry_run):
     """
@@ -11,9 +24,10 @@ def configure_wallet(dry_run):
     """
     if dry_run:
         return None
-    wallet = bt.wallet(name="test")
+    wallet = bt.wallet(name="snipe")
     wallet.unlock_coldkey()
     return wallet
+
 
 def find_optimal_increment(subnet, min_increment, max_increment, target_min, target_max, tolerance=1e-3, max_iterations=20):
     """
@@ -73,18 +87,18 @@ def stake_on_subnet(sub, netuid, current_increment, dry_run, wallet, lower_thres
     """
     print(f"\n==== Processing Subnet {netuid} ====")
     subnet = sub.subnet(netuid)
-    
+
     optimal_increment, optimal_slippage = find_optimal_increment(
         subnet, min_increment, max_increment, lower_threshold, upper_threshold
     )
-    
+
     if optimal_slippage is None:
         print("Could not determine optimal slippage. Skipping transaction.")
         return current_increment, 0.0
 
     print(f"Optimal increment found: {optimal_increment:.3f} TAO with slippage: {optimal_slippage:.4f}%")
     spent = 0.0
-    if optimal_slippage < 20.0:
+    if optimal_slippage < 10.0:
         print("Slippage acceptable, proceeding with staking transaction.")
         if not dry_run:
             try:
@@ -113,9 +127,9 @@ def stake_on_subnet(sub, netuid, current_increment, dry_run, wallet, lower_thres
 if __name__ == '__main__':
     # Connect to the network: use test network if TEST_NET_RUN is True, otherwise use main network.
     sub = bt.Subtensor(network="test" if TEST_NET_RUN else "main")
-    
+
     wallet = configure_wallet(DRY_RUN)
-    
+
     # List of subnets (netuids) to stake into
     subnets_to_stake = [19, 4, 51]
     stake_tracker = {net: 0.0 for net in subnets_to_stake}
@@ -126,7 +140,7 @@ if __name__ == '__main__':
     lower_threshold = 0    # Minimum desired slippage (in %)
     upper_threshold = 5.0   # Maximum desired slippage (in %)
     min_increment = 0.01
-    max_increment = 0.1 if TEST_NET_RUN else 1.0
+    max_increment = 0.025 if TEST_NET_RUN else 1.0
 
     while total_spend < TARGET_TOTAL_SPEND:
         for netuid in subnets_to_stake:
@@ -142,5 +156,5 @@ if __name__ == '__main__':
                 break
         print("Waiting for next block...")
         sub.wait_for_block()
-    
+
     print("Target TAO spending reached. Staking complete.")
