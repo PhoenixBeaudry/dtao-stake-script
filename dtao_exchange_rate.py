@@ -3,11 +3,11 @@ import bittensor as bt
 
 config = bt.config()
 
-sub = bt.Subtensor(network="ws://127.0.0.1:9944")
+sub = bt.Subtensor(network="finney")
 
 print(sub)
 
-subnets_to_stake = [19, 4, 51]
+subnets_to_stake = [19, 4, 51, 9, 1, 8, 34, 64,51, 29]
 
 while(True):
     try:

@@ -16,7 +16,7 @@ import bittensor as bt
 
 DRY_RUN = False
 TEST_NET_RUN = False
-TARGET_TOTAL_SPEND = 0.3 if TEST_NET_RUN else 11.0
+TARGET_TOTAL_SPEND = 0.3 if TEST_NET_RUN else 3.0
 
 def configure_wallet(dry_run):
     """
@@ -29,7 +29,7 @@ def configure_wallet(dry_run):
     return wallet
 
 
-def find_optimal_increment(subnet, min_increment, max_increment, target_min, target_max, tolerance=1e-3, max_iterations=20):
+def find_optimal_increment(subnet, min_increment, max_increment, target_min, target_max, tolerance=1e-3, max_iterations=10):
     """
     Uses binary search to find a stake increment that yields a slippage percentage within the target range [target_min, target_max].
 
@@ -49,6 +49,8 @@ def find_optimal_increment(subnet, min_increment, max_increment, target_min, tar
     """
     low = min_increment
     high = max_increment
+    print(f"Slippage for max increment: {subnet.slippage(max_increment, percentage=True)}")
+    print(f"Slippage for min increment: {subnet.slippage(min_increment, percentage=True)}")
     for _ in range(max_iterations):
         mid = (low + high) / 2.0
         try:
@@ -98,7 +100,7 @@ def stake_on_subnet(sub, netuid, current_increment, dry_run, wallet, lower_thres
 
     print(f"Optimal increment found: {optimal_increment:.3f} TAO with slippage: {optimal_slippage:.4f}%")
     spent = 0.0
-    if optimal_slippage < 10.0:
+    if optimal_slippage < 0.5:
         print("Slippage acceptable, proceeding with staking transaction.")
         if not dry_run:
             try:
@@ -126,21 +128,21 @@ def stake_on_subnet(sub, netuid, current_increment, dry_run, wallet, lower_thres
 
 if __name__ == '__main__':
     # Connect to the network: use test network if TEST_NET_RUN is True, otherwise use main network.
-    sub = bt.Subtensor(network="test" if TEST_NET_RUN else "ws://127.0.0.1:9944")
+    sub = bt.Subtensor(network="test" if TEST_NET_RUN else "finney")
 
     wallet = configure_wallet(DRY_RUN)
 
     # List of subnets (netuids) to stake into
-    subnets_to_stake = [19, 4, 51]
+    subnets_to_stake = [19, 4, 51, 9, 1, 8, 34, 64, 51, 29]
     stake_tracker = {net: 0.0 for net in subnets_to_stake}
     total_spend = 0.0
 
     # Initialize stake increment and dynamic adjustment parameters
-    current_increment = 0.025 if TEST_NET_RUN else 0.2
+    current_increment = 0.025 if TEST_NET_RUN else 0.025
     lower_threshold = 0    # Minimum desired slippage (in %)
-    upper_threshold = 7.0   # Maximum desired slippage (in %)
-    min_increment = 0.2
-    max_increment = 0.025 if TEST_NET_RUN else 1
+    upper_threshold = 0.5  # Maximum desired slippage (in %)
+    min_increment = 0.025
+    max_increment = 0.025 if TEST_NET_RUN else 0.05
 
     while total_spend < TARGET_TOTAL_SPEND:
         try:
